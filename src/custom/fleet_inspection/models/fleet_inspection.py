@@ -1,13 +1,10 @@
-# NOTA: este archivo es la versión ORIGINAL para Odoo 16.
-# Usa attrs y states que están deprecated en Odoo 17.
-# La migración a 17 se hace en la versión 17.0.1.0.0.
-
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
 
 class FleetInspection(models.Model):
     _name = 'fleet.inspection'
+    _description = 'Inspección de Vehículo'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _rec_name = 'name'
     _order = 'date desc, id desc'
@@ -25,12 +22,12 @@ class FleetInspection(models.Model):
         required=True,
         tracking=True,
     )
-    vehicle_type = fields.Selection([
-        ('moto', 'Moto'),
-        ('car', 'Carro'),
-        ('truck', 'Camión'),
-        ('other', 'Otro'),
-    ], string='Tipo de vehículo', required=True, tracking=True)
+    vehicle_type_id = fields.Many2one(
+        'fleet.inspection.vehicle.type',
+        string='Tipo de vehículo',
+        required=True,
+        tracking=True,
+    )
     date = fields.Date(
         string='Fecha',
         required=True,

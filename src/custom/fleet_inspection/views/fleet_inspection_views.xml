@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- VERSIÓN ODOO 17 — sin attrs ni states; usa invisible= y readonly= -->
 <odoo>
     <record id="view_fleet_inspection_form" model="ir.ui.view">
         <field name="name">fleet.inspection.form</field>
@@ -26,7 +25,7 @@
                         <group>
                             <field name="name" readonly="state != 'draft'"/>
                             <field name="vehicle_id" readonly="state != 'draft'"/>
-                            <field name="vehicle_type" readonly="state != 'draft'"/>
+                            <field name="vehicle_type_id" readonly="state != 'draft'"/>
                         </group>
                         <group>
                             <field name="date" readonly="state != 'draft'"/>
@@ -75,7 +74,7 @@
                   decoration-danger="state == 'rejected'">
                 <field name="name"/>
                 <field name="vehicle_id"/>
-                <field name="vehicle_type"/>
+                <field name="vehicle_type_id"/>
                 <field name="date"/>
                 <field name="inspector_id"/>
                 <field name="state"/>
@@ -90,6 +89,7 @@
             <search string="Inspecciones">
                 <field name="name"/>
                 <field name="vehicle_id"/>
+                <field name="vehicle_type_id"/>
                 <filter string="Borrador" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="En curso" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
                 <filter string="Aprobadas" name="approved" domain="[('state', '=', 'approved')]"/>
@@ -97,7 +97,7 @@
                 <group expand="0" string="Agrupar por">
                     <filter string="Vehículo" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
                     <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
-                    <filter string="Tipo" name="group_type" context="{'group_by': 'vehicle_type'}"/>
+                    <filter string="Tipo" name="group_type" context="{'group_by': 'vehicle_type_id'}"/>
                 </group>
             </search>
         </field>

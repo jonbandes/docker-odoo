@@ -1,6 +1,6 @@
 {
     'name': 'Inspecciones de Vehículos',
-    'version': '16.0.1.0.0',
+    'version': '17.0.1.0.0',
     'summary': 'Registro de inspecciones de vehículos con checklist',
     'description': """
         Módulo para gestionar inspecciones de vehículos de la flota.

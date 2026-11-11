@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- VERSIÓN ODOO 16 — usa attrs y states (deprecated en 17) -->
+<!-- VERSIÓN ODOO 17 — sin attrs ni states; usa invisible= y readonly= -->
 <odoo>
-    <!-- Formulario -->
     <record id="view_fleet_inspection_form" model="ir.ui.view">
         <field name="name">fleet.inspection.form</field>
         <field name="model">fleet.inspection</field>
@@ -9,34 +8,35 @@
             <form string="Inspección de Vehículo">
                 <header>
                     <button name="action_start" type="object" string="Iniciar"
-                            states="draft"
+                            invisible="state != 'draft'"
                             class="btn-primary"/>
                     <button name="action_approve" type="object" string="Aprobar"
-                            states="in_progress"
+                            invisible="state != 'in_progress'"
                             class="btn-success"/>
                     <button name="action_reject" type="object" string="Rechazar"
-                            states="in_progress"
+                            invisible="state != 'in_progress'"
                             class="btn-danger"/>
                     <button name="action_reset_draft" type="object" string="Restablecer borrador"
-                            states="rejected"/>
+                            invisible="state != 'rejected'"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,in_progress,approved"/>
                 </header>
                 <sheet>
                     <group>
                         <group>
-                            <field name="name"/>
-                            <field name="vehicle_id"/>
-                            <field name="vehicle_type"/>
+                            <field name="name" readonly="state != 'draft'"/>
+                            <field name="vehicle_id" readonly="state != 'draft'"/>
+                            <field name="vehicle_type" readonly="state != 'draft'"/>
                         </group>
                         <group>
-                            <field name="date"/>
-                            <field name="inspector_id"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="inspector_id" readonly="state != 'draft'"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Puntos de inspección">
-                            <field name="inspection_line_ids">
+                            <field name="inspection_line_ids"
+                                   readonly="state not in ['draft', 'in_progress']">
                                 <tree editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
@@ -46,10 +46,11 @@
                             </field>
                         </page>
                         <page string="Observaciones">
-                            <field name="notes" placeholder="Observaciones generales..."/>
+                            <field name="notes"
+                                   placeholder="Observaciones generales..."
+                                   readonly="state not in ['draft', 'in_progress']"/>
                             <field name="rejection_reason"
-                                   attrs="{'invisible': [('state', '!=', 'rejected')],
-                                           'required': [('state', '=', 'rejected')]}"
+                                   invisible="state != 'rejected'"
                                    placeholder="Motivo de rechazo..."/>
                         </page>
                     </notebook>
@@ -63,7 +64,6 @@
         </field>
     </record>
 
-    <!-- Lista -->
     <record id="view_fleet_inspection_tree" model="ir.ui.view">
         <field name="name">fleet.inspection.tree</field>
         <field name="model">fleet.inspection</field>
@@ -83,7 +83,6 @@
         </field>
     </record>
 
-    <!-- Búsqueda -->
     <record id="view_fleet_inspection_search" model="ir.ui.view">
         <field name="name">fleet.inspection.search</field>
         <field name="model">fleet.inspection</field>
@@ -104,7 +103,6 @@
         </field>
     </record>
 
-    <!-- Acción -->
     <record id="action_fleet_inspection" model="ir.actions.act_window">
         <field name="name">Inspecciones</field>
         <field name="res_model">fleet.inspection</field>
@@ -112,7 +110,6 @@
         <field name="context">{'search_default_in_progress': 1}</field>
     </record>
 
-    <!-- Menú -->
     <menuitem id="menu_fleet_inspection_root"
               name="Inspecciones"
               parent="fleet.fleet_root"

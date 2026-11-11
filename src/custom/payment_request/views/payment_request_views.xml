@@ -25,7 +25,7 @@
                             groups="payment_request.group_payment_request_treasury"/>
                     <button name="action_reset_draft" type="object" string="Restablecer borrador"
                             invisible="state != 'rejected'"/>
-                    <button name="%(action_payment_request_report)d" type="action"
+                    <button name="action_print_report" type="object"
                             string="Imprimir solicitud"
                             invisible="state == 'draft'"
                             class="btn-secondary"/>

@@ -188,3 +188,8 @@ class PaymentRequest(models.Model):
             'res_id': self.payment_id.id,
             'view_mode': 'form',
         }
+
+    def action_print_report(self):
+        """Genera el PDF de la solicitud (llamado desde el botón en vista)."""
+        self.ensure_one()
+        return self.env.ref('payment_request.action_payment_request_report').report_action(self)

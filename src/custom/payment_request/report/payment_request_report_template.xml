@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_payment_request_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <h2>Solicitud de Pago</h2>
+                                <h3 t-field="o.name"/>
+                            </div>
+                            <div class="col-6 text-right">
+                                <span t-esc="o.state.upper()"
+                                      t-attf-class="badge #{
+                                          'bg-secondary' if o.state == 'draft' else
+                                          'bg-warning' if o.state == 'sent' else
+                                          'bg-success' if o.state in ('approved', 'paid') else
+                                          'bg-danger'
+                                      }"/>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Proveedor:</strong>
+                                <p t-field="o.partner_id"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Solicitante:</strong>
+                                <p t-field="o.user_id"/>
+                                <strong>Fecha:</strong>
+                                <p t-field="o.date"/>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th class="text-right">Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td t-field="o.concept"/>
+                                            <td class="text-right">
+                                                <span t-field="o.amount"
+                                                      t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" t-if="o.state in ('approved', 'paid')">
+                            <div class="col-12">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Aprobado por:</strong></td>
+                                        <td t-field="o.approved_by"/>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Fecha de aprobación:</strong></td>
+                                        <td t-field="o.approved_date"/>
+                                    </tr>
+                                    <tr t-if="o.payment_id">
+                                        <td><strong>Referencia de pago:</strong></td>
+                                        <td t-field="o.payment_id.ref"/>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3" t-if="o.state == 'rejected'">
+                            <div class="col-12">
+                                <div class="alert alert-danger">
+                                    <strong>Motivo de rechazo:</strong>
+                                    <p t-field="o.rejection_reason"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Firmas -->
+                        <div class="row mt-5">
+                            <div class="col-4 text-center">
+                                <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
+                                    Solicitante
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
+                                    Aprobador
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">
+                                    Tesorería
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

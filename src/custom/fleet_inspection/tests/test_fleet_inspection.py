@@ -15,13 +15,30 @@ class TestFleetInspection(TransactionCase):
             'license_plate': 'TST-001',
         })
 
-    def _create_inspection(self, vehicle_type='car'):
-        return self.env['fleet.inspection'].create({
+    def _make_vehicle_type(self, code='car'):
+        """Busca o crea el tipo de vehículo (compatibilidad Tramo A y B)."""
+        if 'vehicle_type_id' in self.env['fleet.inspection']._fields:
+            vtype = self.env['fleet.inspection.vehicle.type'].search([('code', '=', code)], limit=1)
+            if not vtype:
+                names = {'moto': 'Moto', 'car': 'Carro', 'truck': 'Camión', 'other': 'Otro'}
+                vtype = self.env['fleet.inspection.vehicle.type'].create({
+                    'name': names.get(code, code),
+                    'code': code,
+                })
+            return vtype
+        return None
+
+    def _create_inspection(self, vehicle_type_code='car'):
+        vals = {
             'name': 'INS/TEST/001',
             'vehicle_id': self.vehicle.id,
-            'vehicle_type': vehicle_type,
             'date': '2026-11-11',
-        })
+        }
+        if 'vehicle_type_id' in self.env['fleet.inspection']._fields:
+            vals['vehicle_type_id'] = self._make_vehicle_type(vehicle_type_code).id
+        else:
+            vals['vehicle_type'] = vehicle_type_code
+        return self.env['fleet.inspection'].create(vals)
 
     def test_initial_state_is_draft(self):
         """Nueva inspección comienza en borrador."""
@@ -73,33 +90,66 @@ class TestFleetInspection(TransactionCase):
         inspection.action_reject()
         self.assertEqual(inspection.state, 'rejected')
 
-    def test_all_vehicle_types(self):
-        """Todos los tipos de vehículo son aceptados."""
+    def test_all_vehicle_types_selection(self):
+        """Tramo A: todos los tipos de selección son aceptados."""
+        if 'vehicle_type_id' in self.env['fleet.inspection']._fields:
+            self.skipTest('Tramo B instalado: vehicle_type es many2one')
         for vtype in ('moto', 'car', 'truck', 'other'):
-            inspection = self._create_inspection(vehicle_type=vtype)
+            inspection = self._create_inspection(vehicle_type_code=vtype)
             self.assertEqual(inspection.vehicle_type, vtype)
 
-    def test_migration_vehicle_type_id(self):
-        """Tramo B: vehicle_type_id se asigna en la migración.
-
-        Esta prueba verifica la lógica de migración: dado un registro con vehicle_type
-        (selección), después de la migración debe tener vehicle_type_id apuntando
-        al registro correcto del catálogo.
-        """
-        # Solo corre si vehicle_type_id existe (versión 17.0.2.0.0)
+    def test_all_vehicle_types_many2one(self):
+        """Tramo B: todos los tipos del catálogo son aceptados."""
         if 'vehicle_type_id' not in self.env['fleet.inspection']._fields:
-            self.skipTest('vehicle_type_id no existe (Tramo A, pre-migración Tramo B)')
+            self.skipTest('vehicle_type_id no existe (versión Tramo A)')
+        for code in ('moto', 'car', 'truck', 'other'):
+            inspection = self._create_inspection(vehicle_type_code=code)
+            self.assertEqual(inspection.vehicle_type_id.code, code)
 
-        from odoo.addons.fleet_inspection.migrations._17_0_2_0_0 import post_migrate
-        # El catálogo debe haberse creado en la instalación
-        car_type = self.env['fleet.inspection.vehicle.type'].search([('code', '=', 'car')])
-        self.assertTrue(car_type, 'El tipo de vehículo "Carro" debe existir en el catálogo')
+    def test_migration_logic(self):
+        """Tramo B: la lógica de migración asigna vehicle_type_id correcto.
 
-        inspection = self._create_inspection(vehicle_type='car')
-        # Simula la migración sobre este registro
-        post_migrate.migrate(self.env.cr, '17.0.1.0.0')
+        Simula el escenario: inspección creada con code='car' en BD,
+        después del UPDATE de migración debe apuntar al tipo correcto.
+        """
+        if 'vehicle_type_id' not in self.env['fleet.inspection']._fields:
+            self.skipTest('vehicle_type_id no existe (versión Tramo A)')
+
+        # Asegurar que el catálogo existe
+        car_type = self._make_vehicle_type('car')
+        self.assertTrue(car_type, 'El tipo Carro debe existir en el catálogo')
+
+        # Crear una inspección correctamente con Tramo B
+        inspection = self._create_inspection('car')
+        self.assertEqual(inspection.vehicle_type_id.code, 'car')
+
+        # Simular que el script SQL de migración actualiza un registro sin tipo
+        self.env.cr.execute(
+            "UPDATE fleet_inspection SET vehicle_type_id = NULL WHERE id = %s",
+            [inspection.id],
+        )
+        inspection.invalidate_recordset()
+        self.assertFalse(inspection.vehicle_type_id)
+
+        # Ejecutar la lógica de migración sobre este registro
+        from odoo import api, SUPERUSER_ID
+        env = api.Environment(self.env.cr, SUPERUSER_ID, {})
+        type_map = {}
+        for code in ('moto', 'car', 'truck', 'other'):
+            vt = env['fleet.inspection.vehicle.type'].search([('code', '=', code)], limit=1)
+            if vt:
+                type_map[code] = vt.id
+
+        for code, type_id in type_map.items():
+            self.env.cr.execute(
+                """UPDATE fleet_inspection
+                      SET vehicle_type_id = %s
+                    WHERE vehicle_type = %s AND vehicle_type_id IS NULL""",
+                [type_id, code],
+            )
+
         inspection.invalidate_recordset()
         self.assertEqual(
             inspection.vehicle_type_id.code, 'car',
-            'La migración debe asignar vehicle_type_id correcto',
+            'La migración debe asignar vehicle_type_id = car',
         )

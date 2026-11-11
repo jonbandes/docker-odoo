@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shop_api_log_tree" model="ir.ui.view">
+        <field name="name">shop.api.log.tree</field>
+        <field name="model">shop.api.log</field>
+        <field name="arch" type="xml">
+            <tree string="Log de llamadas API"
+                  decoration-danger="response_code >= 500"
+                  decoration-warning="response_code >= 400 and response_code &lt; 500"
+                  decoration-success="response_code &lt; 300">
+                <field name="timestamp"/>
+                <field name="method"/>
+                <field name="endpoint"/>
+                <field name="user_id"/>
+                <field name="response_code"/>
+                <field name="duration_ms" string="ms"/>
+                <field name="error_code" optional="show"/>
+                <field name="request_ref" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_shop_api_log_search" model="ir.ui.view">
+        <field name="name">shop.api.log.search</field>
+        <field name="model">shop.api.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="endpoint"/>
+                <field name="user_id"/>
+                <filter string="Errores" name="errors" domain="[('response_code', '&gt;=', 400)]"/>
+                <filter string="Hoy" name="today" domain="[('timestamp', '&gt;=', datetime.datetime.now().strftime('%Y-%m-%d 00:00:00'))]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shop_api_log" model="ir.actions.act_window">
+        <field name="name">Log de API</field>
+        <field name="res_model">shop.api.log</field>
+        <field name="view_mode">tree</field>
+    </record>
+</odoo>

@@ -1,19 +1,4 @@
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
-
-
-class SaleOrder(models.Model):
-    _inherit = 'sale.order'
-
-    def action_confirm(self):
-        # Validar que el usuario tenga permiso de gestión de comisiones
-        # antes de confirmar para garantizar que las comisiones estén configuradas
-        if not self.env.user.has_group('sale_commission.group_sale_commission_manager'):
-            raise UserError(
-                _('Solo el gestor de comisiones puede confirmar pedidos de venta. '
-                  'Contacte a su gerente.')
-            )
-        return super().action_confirm()
+from odoo import api, fields, models
 
 
 class SaleOrderLine(models.Model):

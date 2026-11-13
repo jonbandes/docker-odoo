@@ -2,13 +2,13 @@
 <odoo>
     <record id="group_fleet_inspection_user" model="res.groups">
         <field name="name">Inspector</field>
-        <field name="category_id" ref="base.module_category_field_service"/>
+        <field name="category_id" ref="base.module_category_fleet"/>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
     <record id="group_fleet_inspection_manager" model="res.groups">
         <field name="name">Gestor de Inspecciones</field>
-        <field name="category_id" ref="base.module_category_field_service"/>
+        <field name="category_id" ref="base.module_category_fleet"/>
         <field name="implied_ids" eval="[(4, ref('fleet_inspection.group_fleet_inspection_user'))]"/>
     </record>
 </odoo>

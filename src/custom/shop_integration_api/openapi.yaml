@@ -1,0 +1,276 @@
+openapi: "3.0.3"
+info:
+  title: Shop Integration API
+  description: |
+    API REST para integración entre la tienda en línea del cliente y Odoo.
+
+    **Autenticación:**
+    - GET /api/v1/products: sesión de Odoo (Tramo A) o Bearer token (Tramo B+)
+    - POST /api/v1/orders: Bearer token obligatorio
+
+    **Notas:**
+    - El pedido se crea como cotización (estado `draft`). La confirmación queda a cargo del equipo de ventas.
+    - El RIF del cliente corresponde al campo `vat` del partner en Odoo.
+  version: "1.0.0"
+  contact:
+    name: Binaural
+servers:
+  - url: http://localhost:8069
+    description: Servidor local de desarrollo
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API Key generada en Odoo (Preferencias → Seguridad → Claves API)
+
+  schemas:
+    ProductItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        default_code:
+          type: string
+          example: PROD-001
+        name:
+          type: string
+          example: Camiseta Talla M
+        lst_price:
+          type: number
+          format: float
+          example: 25.99
+        qty_available:
+          type: number
+          format: float
+          example: 150.0
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 350
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          example: "/api/v1/products?page=2&page_size=20"
+
+    OrderLine:
+      type: object
+      required: [default_code, qty]
+      properties:
+        default_code:
+          type: string
+          example: PROD-001
+        qty:
+          type: number
+          format: float
+          example: 3.0
+
+    CreateOrderRequest:
+      type: object
+      required: [vat, external_ref, lines]
+      properties:
+        vat:
+          type: string
+          description: RIF del cliente (campo vat en Odoo)
+          example: J-12345678-9
+        external_ref:
+          type: string
+          description: Referencia interna de la tienda
+          example: SHOP-ORDER-2026-001
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderLine'
+
+    CreateOrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          example: 123
+        order_name:
+          type: string
+          example: S00123
+        state:
+          type: string
+          enum: [draft, sale, done, cancel]
+          example: draft
+        partner:
+          type: string
+          example: Distribuidora Andina C.A.
+        lines_count:
+          type: integer
+          example: 2
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: PRODUCT_NOT_FOUND
+            field:
+              type: string
+              example: "lines[1].default_code"
+            message:
+              type: string
+              example: No existe un producto con el código ABC-123
+
+paths:
+  /api/v1/products:
+    get:
+      summary: Listar productos disponibles
+      description: |
+        Devuelve los productos activos y vendibles de Odoo con su stock disponible.
+        Los filtros son opcionales y se pueden combinar.
+      security:
+        - bearerAuth: []
+        - {}  # también acepta sesión Odoo (cookie)
+      parameters:
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+          description: ID de categoría (incluye subcategorías)
+          example: 5
+        - name: in_stock
+          in: query
+          schema:
+            type: string
+            enum: ["1", "true", "yes"]
+          description: Solo productos con qty_available > 0
+        - name: modified_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: "ISO 8601: YYYY-MM-DD o YYYY-MM-DDTHH:MM:SS"
+          example: "2026-11-01"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Lista de productos con metadatos de paginación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductItem'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        "400":
+          description: Parámetro inválido (ej. fecha mal formateada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "401":
+          description: Sin autenticación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/orders:
+    post:
+      summary: Crear pedido de venta
+      description: |
+        Crea un pedido de venta en Odoo a partir del RIF del cliente y las líneas.
+        El pedido queda en estado **cotización** (draft); la confirmación la hace el equipo de ventas.
+
+        Incluir `Idempotency-Key` para prevenir pedidos duplicados en reintentos de red.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+          description: Clave única para identificar la petición. Mismo key + mismo cuerpo = mismo pedido (200). Mismo key + cuerpo diferente = 409.
+          example: order-ref-20261111-001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        "201":
+          description: Pedido creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        "200":
+          description: Replay idempotente — se devuelve el pedido ya creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        "401":
+          description: Bearer token inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "409":
+          description: Idempotency-Key ya usada con contenido diferente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        "422":
+          description: Error de validación (campo faltante, producto/cliente no encontrado, cantidad inválida)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                partner_not_found:
+                  summary: Cliente no encontrado
+                  value:
+                    error:
+                      code: PARTNER_NOT_FOUND
+                      field: vat
+                      message: No existe un cliente con el RIF J-99999999-9
+                product_not_found:
+                  summary: Producto no encontrado
+                  value:
+                    error:
+                      code: PRODUCT_NOT_FOUND
+                      field: "lines[0].default_code"
+                      message: No existe un producto con el código ABC-XYZ
+                invalid_qty:
+                  summary: Cantidad inválida
+                  value:
+                    error:
+                      code: INVALID_VALUE
+                      field: "lines[0].qty"
+                      message: La cantidad debe ser mayor que cero.

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_inspection_vehicle_type_tree" model="ir.ui.view">
+        <field name="name">fleet.inspection.vehicle.type.tree</field>
+        <field name="model">fleet.inspection.vehicle.type</field>
+        <field name="arch" type="xml">
+            <tree string="Tipos de Vehículo" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_fleet_inspection_vehicle_type" model="ir.actions.act_window">
+        <field name="name">Tipos de Vehículo</field>
+        <field name="res_model">fleet.inspection.vehicle.type</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+    <menuitem id="menu_fleet_inspection_vehicle_type"
+              name="Tipos de Vehículo"
+              parent="fleet_inspection.menu_fleet_inspection_root"
+              action="action_fleet_inspection_vehicle_type"
+              sequence="20"
+              groups="fleet_inspection.group_fleet_inspection_manager"/>
+</odoo>

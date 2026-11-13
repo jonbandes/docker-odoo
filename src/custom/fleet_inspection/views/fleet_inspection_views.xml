@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_inspection_form" model="ir.ui.view">
+        <field name="name">fleet.inspection.form</field>
+        <field name="model">fleet.inspection</field>
+        <field name="arch" type="xml">
+            <form string="Inspección de Vehículo">
+                <header>
+                    <button name="action_start" type="object" string="Iniciar"
+                            invisible="state != 'draft'"
+                            class="btn-primary"/>
+                    <button name="action_approve" type="object" string="Aprobar"
+                            invisible="state != 'in_progress'"
+                            class="btn-success"/>
+                    <button name="action_reject" type="object" string="Rechazar"
+                            invisible="state != 'in_progress'"
+                            class="btn-danger"/>
+                    <button name="action_reset_draft" type="object" string="Restablecer borrador"
+                            invisible="state != 'rejected'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,in_progress,approved"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="state != 'draft'"/>
+                            <field name="vehicle_id" readonly="state != 'draft'"/>
+                            <field name="vehicle_type_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="inspector_id" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Puntos de inspección">
+                            <field name="inspection_line_ids"
+                                   readonly="state not in ['draft', 'in_progress']">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="result"/>
+                                    <field name="notes"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="notes"
+                                   placeholder="Observaciones generales..."
+                                   readonly="state not in ['draft', 'in_progress']"/>
+                            <field name="rejection_reason"
+                                   invisible="state != 'rejected'"
+                                   placeholder="Motivo de rechazo..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_fleet_inspection_tree" model="ir.ui.view">
+        <field name="name">fleet.inspection.tree</field>
+        <field name="model">fleet.inspection</field>
+        <field name="arch" type="xml">
+            <tree string="Inspecciones"
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state == 'in_progress'"
+                  decoration-success="state == 'approved'"
+                  decoration-danger="state == 'rejected'">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="vehicle_type_id"/>
+                <field name="date"/>
+                <field name="inspector_id"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_fleet_inspection_search" model="ir.ui.view">
+        <field name="name">fleet.inspection.search</field>
+        <field name="model">fleet.inspection</field>
+        <field name="arch" type="xml">
+            <search string="Inspecciones">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="vehicle_type_id"/>
+                <filter string="Borrador" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="En curso" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter string="Aprobadas" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Rechazadas" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Vehículo" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
+                    <filter string="Tipo" name="group_type" context="{'group_by': 'vehicle_type_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_fleet_inspection" model="ir.actions.act_window">
+        <field name="name">Inspecciones</field>
+        <field name="res_model">fleet.inspection</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_in_progress': 1}</field>
+    </record>
+
+    <menuitem id="menu_fleet_inspection_root"
+              name="Inspecciones"
+              parent="fleet.fleet_root"
+              sequence="20"/>
+    <menuitem id="menu_fleet_inspection_list"
+              name="Todas las inspecciones"
+              parent="menu_fleet_inspection_root"
+              action="action_fleet_inspection"
+              sequence="10"/>
+</odoo>

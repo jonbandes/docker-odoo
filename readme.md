@@ -5,6 +5,16 @@ Entorno de desarrollo que permite levantar **múltiples instancias de Odoo** (di
 Compatible con Odoo 14.0, 16.0, 17.0, 18.0, 19.0 y master.
 Compatible con Linux y macOS (AMD y ARM).
 
+## Prueba técnica — Versión de Odoo
+
+**`ODOO_VERSION=17.0`** — Los módulos de esta entrega (`shop_integration_api`, `fleet_inspection`, `sale_commission`, `payment_request`) están escritos y probados sobre **Odoo 17**.
+
+Comando de pruebas:
+```bash
+./odoo test -d prueba_limpia \
+  -m shop_integration_api,fleet_inspection,sale_commission,payment_request
+```
+
 ## Instalación Rápida
 
 ```bash

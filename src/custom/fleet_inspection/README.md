@@ -16,7 +16,7 @@
 | Manifiesto `version: 16.0.1.0.0` | La versión debe reflejar la versión de Odoo compatible | Actualizado a `17.0.1.0.0` |
 | `vehicle_type` Selection → `vehicle_type_id` Many2one | Tramo B: catálogo extensible sin cambiar código | Nuevo modelo `fleet.inspection.vehicle.type`, datos semilla en XML, script en `migrations/17.0.2.0.0/post_migrate.py` |
 | Nueva entrada en `ir.model.access.csv` | El nuevo modelo necesita permisos | Agregadas dos líneas: lectura para todos y escritura/borrado para gestores |
-| `category_id` en grupos: `base.module_category_field_service` → `base.module_category_fleet` | `field_service` no existe en Odoo 17 (es un módulo separado); `fleet` sí | Reemplazado en `security/security.xml` |
+| `category_id` en grupos de seguridad | `base.module_category_field_service` no existe en Odoo 17; `base.module_category_fleet` requiere el módulo `fleet` instalado | Eliminado el campo — los grupos aparecen en "Otros", comportamiento estándar para módulos custom |
 
 ## Cómo probarlo
 

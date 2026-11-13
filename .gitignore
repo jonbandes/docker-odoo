@@ -3,7 +3,8 @@ instances.json
 instances.json.bak*
 coverage_data/
 pwa.json
-src
+src/*
+!src/custom
 !mcp-server/src
 logs/
 .resources/Dockerfile
